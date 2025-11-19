@@ -1,0 +1,548 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background: #000;
+  color: #fff;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+}
+
+.game-title {
+  text-align: center;
+  font-size: 24px;
+  color: #ffd700;
+  text-shadow: 3px 3px 0 #8b4513, 6px 6px 0 #000;
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 4px solid #ffd700;
+  background: #1a1a2e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #88c0d0;
+  margin-top: 10px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* Character Selection */
+.character-selection {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 40px 0;
+}
+
+.character-card {
+  background: #2e3440;
+  border: 4px solid #4c566a;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 300px;
+  position: relative;
+}
+
+.character-card:hover {
+  border-color: #88c0d0;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(136, 192, 208, 0.3);
+}
+
+.character-card h3 {
+  color: #88c0d0;
+  font-size: 16px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.character-stats {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #d8dee9;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 5px 0;
+}
+
+/* Game Layout */
+.game-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .game-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: #2e3440;
+  border: 4px solid #4c566a;
+  padding: 20px;
+}
+
+.panel-title {
+  color: #88c0d0;
+  font-size: 14px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #4c566a;
+}
+
+/* Adventurer Info */
+.adventurer-info {
+  font-size: 10px;
+  line-height: 1.8;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 5px;
+  background: #3b4252;
+}
+
+.info-label {
+  color: #88c0d0;
+}
+
+.info-value {
+  color: #d8dee9;
+  font-weight: bold;
+}
+
+.condition {
+  display: inline-block;
+  padding: 3px 8px;
+  margin-left: 5px;
+  border: 2px solid #bf616a;
+  background: rgba(191, 97, 106, 0.2);
+  color: #bf616a;
+  font-size: 8px;
+}
+
+.mood-awful { color: #bf616a; }
+.mood-bad { color: #d08770; }
+.mood-neutral { color: #d8dee9; }
+.mood-good { color: #a3be8c; }
+.mood-great { color: #8fbcbb; }
+
+/* Stats Display */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stat-item {
+  background: #3b4252;
+  padding: 10px;
+  border: 2px solid #4c566a;
+  font-size: 9px;
+}
+
+.stat-name {
+  color: #88c0d0;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  color: #d8dee9;
+  font-size: 11px;
+}
+
+/* HP Bar */
+.hp-bar-container {
+  margin: 15px 0;
+}
+
+.hp-bar {
+  width: 100%;
+  height: 20px;
+  background: #3b4252;
+  border: 2px solid #4c566a;
+  position: relative;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #a3be8c 0%, #8fbcbb 100%);
+  transition: width 0.3s;
+  position: relative;
+}
+
+.hp-fill.low {
+  background: linear-gradient(90deg, #bf616a 0%, #d08770 100%);
+  animation: blink 0.5s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.hp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  z-index: 1;
+}
+
+/* Action Buttons */
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn {
+  background: #4c566a;
+  border: 3px solid #6c7a89;
+  color: #eceff4;
+  padding: 12px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-align: center;
+}
+
+.btn:hover:not(:disabled) {
+  background: #5e81ac;
+  border-color: #88c0d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #5e81ac;
+  border-color: #88c0d0;
+}
+
+.btn-success {
+  background: #a3be8c;
+  border-color: #8fbcbb;
+}
+
+.btn-danger {
+  background: #bf616a;
+  border-color: #d08770;
+}
+
+.btn-warning {
+  background: #ebcb8b;
+  border-color: #d08770;
+  color: #2e3440;
+}
+
+/* Combat */
+.combat-container {
+  text-align: center;
+}
+
+.enemy-info {
+  background: #3b4252;
+  padding: 20px;
+  margin: 20px 0;
+  border: 3px solid #bf616a;
+}
+
+.enemy-name {
+  font-size: 16px;
+  color: #bf616a;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.enemy-level {
+  font-size: 10px;
+  color: #d8dee9;
+  margin-bottom: 15px;
+}
+
+.skills-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.skill-btn {
+  background: #5e81ac;
+  border: 3px solid #88c0d0;
+  padding: 15px;
+  text-align: left;
+}
+
+.skill-name {
+  color: #88c0d0;
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.skill-desc {
+  color: #d8dee9;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+/* Game Log */
+.game-log {
+  background: #2e3440;
+  border: 4px solid #4c566a;
+  padding: 15px;
+  height: 300px;
+  overflow-y: auto;
+  font-size: 9px;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+
+.log-entry {
+  margin: 5px 0;
+  padding: 5px;
+  background: #3b4252;
+  border-left: 3px solid #88c0d0;
+}
+
+.log-entry:nth-child(odd) {
+  background: #434c5e;
+}
+
+/* Scrollbar */
+.game-log::-webkit-scrollbar {
+  width: 12px;
+}
+
+.game-log::-webkit-scrollbar-track {
+  background: #2e3440;
+}
+
+.game-log::-webkit-scrollbar-thumb {
+  background: #4c566a;
+  border: 2px solid #2e3440;
+}
+
+.game-log::-webkit-scrollbar-thumb:hover {
+  background: #5e81ac;
+}
+
+/* Turn Counter */
+.turn-counter {
+  text-align: center;
+  font-size: 12px;
+  color: #88c0d0;
+  margin: 20px 0;
+  padding: 10px;
+  background: #2e3440;
+  border: 3px solid #4c566a;
+}
+
+.turn-number {
+  color: #8fbcbb;
+  font-size: 16px;
+}
+
+/* Dungeon Progress */
+.dungeon-progress {
+  margin: 20px 0;
+  padding: 15px;
+  background: #2e3440;
+  border: 3px solid #4c566a;
+}
+
+.progress-title {
+  color: #88c0d0;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 25px;
+  background: #3b4252;
+  border: 2px solid #4c566a;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5e81ac 0%, #88c0d0 100%);
+  transition: width 0.5s;
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 9px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Skill Selection Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #2e3440;
+  border: 4px solid #88c0d0;
+  padding: 30px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-title {
+  color: #88c0d0;
+  font-size: 16px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.skill-options {
+  display: grid;
+  gap: 15px;
+}
+
+.skill-option {
+  background: #3b4252;
+  border: 3px solid #4c566a;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.skill-option:hover {
+  border-color: #88c0d0;
+  transform: translateY(-2px);
+}
+
+/* Victory/Defeat Messages */
+.game-over {
+  text-align: center;
+  padding: 40px;
+  background: #2e3440;
+  border: 4px solid #ffd700;
+  margin: 20px 0;
+}
+
+.game-over h2 {
+  font-size: 20px;
+  color: #ffd700;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.pixel-art {
+  font-size: 40px;
+  margin: 20px 0;
+}
+
+/* Tooltips */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  color: #88c0d0;
+  border-bottom: 1px dotted #88c0d0;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  background-color: #2e3440;
+  color: #d8dee9;
+  text-align: center;
+  border: 2px solid #88c0d0;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  width: 200px;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.shake {
+  animation: shake 0.3s ease-in-out;
+}
