@@ -2,6 +2,12 @@
 
 A retro-styled roguelike game where you play as a retired hero who runs an adventurer's school. Train aspiring heroes and help them conquer the legendary Dungeon Tower!
 
+## 🎮 Play Online
+
+**[Play the game now on GitHub Pages!](https://piopi.github.io/dungeon-crawler/)**
+
+The game automatically deploys to GitHub Pages when changes are pushed to the main branch.
+
 ## 🎮 Game Overview
 
 As the headmaster of an adventurer's school, your mission is to train young heroes to conquer the 10 levels of the Dungeon Tower. Choose from three unique character classes, each with their own strengths and weaknesses, and guide them through an intense 100-turn training regimen.
