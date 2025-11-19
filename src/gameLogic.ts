@@ -8,8 +8,10 @@ import {
   Condition,
   Skill,
   Enemy,
+  LegacyData,
 } from './types';
 import { SKILLS } from './skills';
+import { PASSIVES, CHARACTER_VISUALS } from './passives';
 
 // Base stats for each class
 const CLASS_BASE_STATS: Record<CharacterClass, Stats> = {
@@ -40,9 +42,22 @@ const CLASS_BASE_STATS: Record<CharacterClass, Stats> = {
 };
 
 // Create a new adventurer
-export function createAdventurer(characterClass: CharacterClass, name: string): Adventurer {
+export function createAdventurer(
+  characterClass: CharacterClass,
+  name: string,
+  legacy: LegacyData | null = null,
+  prestigeLevel: number = 0
+): Adventurer {
   const baseStats = { ...CLASS_BASE_STATS[characterClass] };
-  const maxHp = 100 + baseStats.defense * 5;
+
+  // Apply swordsman passive: +20% HP
+  let maxHp = 100 + baseStats.defense * 5;
+  if (characterClass === 'swordsman') {
+    maxHp = Math.floor(maxHp * 1.2);
+  }
+
+  // Inherit skills from legacy (1-2 skills based on prestige level)
+  const inheritedSkills = legacy ? legacy.inheritedSkills.slice(0, Math.min(2, Math.floor(prestigeLevel / 2) + 1)) : [];
 
   return {
     name,
@@ -71,21 +86,28 @@ export function createAdventurer(characterClass: CharacterClass, name: string): 
     fatigue: 0,
     mood: 'Neutral',
     condition: null,
-    skills: [],
+    skills: inheritedSkills,
     hp: maxHp,
     maxHp,
+    passive: PASSIVES[characterClass],
+    visualStyle: CHARACTER_VISUALS[characterClass],
   };
 }
 
 // Calculate failure rate based on fatigue
-export function calculateFailureRate(fatigue: number, condition: Condition): number {
+export function calculateFailureRate(fatigue: number, condition: Condition, characterClass?: CharacterClass): number {
   let baseRate = fatigue * 2; // 0% at 0 fatigue, increases by 2% per fatigue
 
   if (condition === 'Injured') {
     baseRate += 20; // +20% failure rate when injured
   }
 
-  return Math.min(baseRate, 95); // Cap at 95%
+  // Rogue passive: -10% failure rate
+  if (characterClass === 'rogue') {
+    baseRate -= 10;
+  }
+
+  return Math.min(Math.max(baseRate, 0), 95); // Cap at 95%, floor at 0%
 }
 
 // Train a stat
@@ -115,22 +137,38 @@ export function trainStat(
   }
 
   // Calculate failure rate
-  const failureRate = calculateFailureRate(newAdventurer.fatigue, newAdventurer.condition);
+  const failureRate = calculateFailureRate(newAdventurer.fatigue, newAdventurer.condition, newAdventurer.class);
   const failed = Math.random() * 100 < failureRate;
 
   // Increase fatigue
   newAdventurer.fatigue += 1;
 
   const trainingLevel = newAdventurer.trainingLevels[statToTrain];
-  const levelBonus = (trainingLevel - 1) * 0.1; // +10% per level above 1
+  let levelBonus = (trainingLevel - 1) * 0.1; // +10% per level above 1
+
+  // Mage passive: +10% magic training effectiveness
+  if (newAdventurer.class === 'mage' && statToTrain === 'magic') {
+    levelBonus += 0.1;
+  }
+
   const moodModifier = MOOD_MODIFIERS[newAdventurer.mood];
 
   let expGained = 20;
+
+  // Mage passive: +50% EXP
+  if (newAdventurer.class === 'mage') {
+    expGained = Math.floor(expGained * 1.5);
+  }
+
   let message = '';
 
   if (failed) {
     // Training failed
-    expGained = 10; // 50% exp
+    let baseExp = 10; // 50% exp
+    if (newAdventurer.class === 'mage') {
+      baseExp = Math.floor(baseExp * 1.5); // Mage passive applies to failure too
+    }
+    expGained = baseExp;
     newAdventurer.trainingExp[statToTrain] += expGained;
     newAdventurer.exp += expGained;
 
@@ -169,7 +207,15 @@ export function trainStat(
     baseStatGain = 2; // Critical damage gains more
   }
 
-  const statGain = baseStatGain * (1 + levelBonus) * (1 + moodModifier);
+  let statGain = baseStatGain * (1 + levelBonus) * (1 + moodModifier);
+
+  // Rogue passive: 25% chance to double stats
+  let luckyStrike = false;
+  if (newAdventurer.class === 'rogue' && Math.random() < 0.25) {
+    statGain *= 2;
+    luckyStrike = true;
+  }
+
   newAdventurer.stats[statToTrain] += statGain;
 
   // Check if training level increases
@@ -179,6 +225,11 @@ export function trainStat(
     message = `Training successful! ${statToTrain.toUpperCase()} increased by ${statGain.toFixed(1)}! Training level increased to ${newAdventurer.trainingLevels[statToTrain]}! (${expGained} exp)`;
   } else {
     message = `Training successful! ${statToTrain.toUpperCase()} increased by ${statGain.toFixed(1)}! (${expGained} exp)`;
+  }
+
+  // Add lucky strike message
+  if (luckyStrike) {
+    message += ' ⭐ LUCKY STRIKE! Double gains!';
   }
 
   // Check for level up
@@ -205,8 +256,8 @@ export function rest(adventurer: Adventurer): { message: string; adventurer: Adv
   const fatigueReduction = Math.floor(newAdventurer.fatigue * 0.5) + 5; // Reduce 50% + 5
   newAdventurer.fatigue = Math.max(0, newAdventurer.fatigue - fatigueReduction);
 
-  // Small chance to remove condition
-  if (newAdventurer.condition && Math.random() < 0.3) {
+  // 70% chance to remove condition
+  if (newAdventurer.condition && Math.random() < 0.7) {
     const oldCondition = newAdventurer.condition;
     newAdventurer.condition = null;
     return {
@@ -277,17 +328,18 @@ export function getRandomSkills(topStats: StatType[], existingSkills: Skill[]): 
 }
 
 // Create enemy based on dungeon level
-export function createEnemy(dungeonLevel: number, isBoss: boolean = false): Enemy {
+export function createEnemy(dungeonLevel: number, isBoss: boolean = false, prestigeLevel: number = 0): Enemy {
   const levelMultiplier = 1 + (dungeonLevel - 1) * 0.3;
   const bossMultiplier = isBoss ? 2.5 : 1;
+  const prestigeMultiplier = 1 + prestigeLevel * 0.2; // +20% per prestige level
 
-  const baseHp = 50 * levelMultiplier * bossMultiplier;
+  const baseHp = 50 * levelMultiplier * bossMultiplier * prestigeMultiplier;
   const baseStats: Stats = {
-    strength: Math.floor(10 * levelMultiplier * bossMultiplier),
-    magic: Math.floor(10 * levelMultiplier * bossMultiplier),
-    defense: Math.floor(8 * levelMultiplier * bossMultiplier),
-    evasion: Math.floor(5 * levelMultiplier),
-    criticalRate: Math.floor(5 * levelMultiplier),
+    strength: Math.floor(10 * levelMultiplier * bossMultiplier * prestigeMultiplier),
+    magic: Math.floor(10 * levelMultiplier * bossMultiplier * prestigeMultiplier),
+    defense: Math.floor(8 * levelMultiplier * bossMultiplier * prestigeMultiplier),
+    evasion: Math.floor(5 * levelMultiplier * prestigeMultiplier),
+    criticalRate: Math.floor(5 * levelMultiplier * prestigeMultiplier),
     criticalDamage: 150,
   };
 

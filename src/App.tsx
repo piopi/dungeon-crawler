@@ -2,6 +2,9 @@ import { useReducer, useState, useEffect, useRef } from 'react';
 import { gameReducer, initialGameState } from './gameReducer';
 import { CharacterClass, StatType, Skill } from './types';
 import { getRandomSkills, getTopTrainedStats } from './gameLogic';
+import { INTRO_STORY } from './events';
+// import { CLASS_INTRO_STORIES, TRAINING_FLAVOR, VICTORY_PHRASES, DEFEAT_PHRASES } from './events';
+// import { CHARACTER_COLORS } from './passives';
 import './App.css';
 
 function App() {
@@ -73,6 +76,34 @@ function App() {
   const handleNewGame = () => {
     dispatch({ type: 'NEW_GAME' });
     prevLevel.current = 0;
+  };
+
+  const handleDismissIntro = () => {
+    dispatch({ type: 'DISMISS_INTRO' });
+  };
+
+  const handleStartPrestige = () => {
+    dispatch({ type: 'START_PRESTIGE' });
+    prevLevel.current = 0;
+  };
+
+  // Intro Story Modal
+  const renderIntroModal = () => {
+    if (!state.showIntro) return null;
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal" style={{ maxWidth: '700px' }}>
+          <h2 className="modal-title">🏰 THE ADVENTURER'S SCHOOL 🏰</h2>
+          <div style={{ fontSize: '10px', lineHeight: '2', color: '#d8dee9', marginBottom: '20px', whiteSpace: 'pre-wrap' }}>
+            {INTRO_STORY}
+          </div>
+          <button className="btn btn-primary" onClick={handleDismissIntro} style={{ width: '100%' }}>
+            Begin Your Journey
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const renderCharacterSelection = () => (
@@ -287,8 +318,10 @@ function App() {
   const renderTrainingActions = () => {
     if (!state.adventurer || state.inCombat) return null;
 
-    const isDungeonTurn = state.turn % 10 === 0 && state.turn > 0;
-    const canChallengeDungeon = state.currentDungeonLevel < 10;
+    // Check if dungeon is available (opens at level * 10, stays open until conquered)
+    const nextDungeonLevel = state.currentDungeonLevel + 1;
+    const dungeonOpenTurn = nextDungeonLevel * 10;
+    const isDungeonAvailable = state.turn >= dungeonOpenTurn && nextDungeonLevel <= 10;
 
     return (
       <div className="panel fade-in">
@@ -318,9 +351,9 @@ function App() {
           <button className="btn btn-warning" onClick={handleTavern}>
             🍺 Tavern
           </button>
-          {isDungeonTurn && canChallengeDungeon && (
+          {isDungeonAvailable && (
             <button className="btn btn-danger" onClick={handleEnterDungeon} style={{ gridColumn: '1 / -1' }}>
-              ⚔️ ENTER DUNGEON TOWER ⚔️
+              ⚔️ ENTER DUNGEON TOWER LVL {nextDungeonLevel} ⚔️
             </button>
           )}
         </div>
@@ -385,15 +418,22 @@ function App() {
     if (!state.adventurer) return null;
 
     const dungeonProgress = (state.currentDungeonLevel / 10) * 100;
-    const nextDungeonTurn = Math.ceil(state.turn / 10) * 10;
+    const nextDungeonLevel = state.currentDungeonLevel + 1;
+    const nextDungeonTurn = nextDungeonLevel * 10;
+    const isDungeonAvailable = state.turn >= nextDungeonTurn && nextDungeonLevel <= 10;
 
     return (
       <div>
         <div className="turn-counter">
           <div>Turn <span className="turn-number">{state.turn}</span></div>
-          {state.currentDungeonLevel < 10 && (
+          {state.currentDungeonLevel < 10 && !isDungeonAvailable && (
             <div style={{ fontSize: '9px', marginTop: '8px', color: '#d8dee9' }}>
               Next Dungeon: Turn {nextDungeonTurn}
+            </div>
+          )}
+          {isDungeonAvailable && (
+            <div style={{ fontSize: '9px', marginTop: '8px', color: '#bf616a', animation: 'pulse 1s infinite' }}>
+              ⚔️ Dungeon Level {nextDungeonLevel} Available! ⚔️
             </div>
           )}
         </div>
@@ -406,7 +446,7 @@ function App() {
               Level {state.currentDungeonLevel} / 10
             </div>
           </div>
-          {state.currentDungeonLevel === 10 && (
+          {state.currentDungeonLevel === 10 && state.adventurer && (
             <div className="game-over fade-in" style={{ marginTop: '20px' }}>
               <h2>🎉 VICTORY! 🎉</h2>
               <div className="pixel-art">👑</div>
@@ -414,9 +454,19 @@ function App() {
                 The Dungeon Tower has been conquered!<br />
                 {state.adventurer.name} is a true hero!
               </p>
-              <button className="btn btn-success" onClick={handleNewGame} style={{ marginTop: '20px' }}>
-                New Game
-              </button>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button className="btn btn-success" onClick={handleStartPrestige} style={{ flex: 1 }}>
+                  🌟 New Game+ (Prestige {state.prestigeLevel + 1})
+                </button>
+                <button className="btn btn-primary" onClick={handleNewGame} style={{ flex: 1 }}>
+                  Fresh Start
+                </button>
+              </div>
+              {state.adventurer.skills.length > 0 && (
+                <div style={{ fontSize: '8px', marginTop: '15px', color: '#88c0d0' }}>
+                  Next adventurer can inherit up to 3 skills: {state.adventurer.skills.slice(0, 3).map(s => s.name).join(', ')}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -495,6 +545,7 @@ function App() {
       )}
 
       {renderSkillSelection()}
+      {renderIntroModal()}
     </div>
   );
 }

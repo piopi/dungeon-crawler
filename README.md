@@ -89,11 +89,12 @@ Adventurers can suffer from negative conditions:
 - **Unmotivated**: 20% chance to skip training entirely
 
 **Removing Conditions**:
-- Rest has a 30% chance to remove conditions
+- Rest has a 70% chance to remove conditions
 - Tavern has a 50% chance to remove Unmotivated
 
 ### Fatigue & Recovery 😴
 - **Rest**: Reduces fatigue by 50% + 5 points
+- Rest also has a 70% chance to cure any active condition
 - Fatigue directly increases training failure rate
 - Manage fatigue carefully to maintain training efficiency
 
@@ -104,15 +105,17 @@ Adventurers can suffer from negative conditions:
 - 18 unique skills tied to different stats
 
 ### Dungeon Tower 🏰
-- Opens every **10th turn**
+- Opens every **10th turn** (Level 1 at turn 10, Level 2 at turn 20, etc.)
 - 10 levels total, progressively harder enemies
-- **Level 10**: Epic boss battle on turn 100
+- **Level 10**: Epic boss battle at turn 100
+- **Failed levels stay open** - you can retry immediately without waiting for the next 10-turn interval
+- Once you conquer a level, the next level opens at its designated turn
 
 **Combat Mechanics**:
 - Turn-based combat with basic attacks and skill usage
 - **Victory**: Gain a full level worth of EXP and mood boost
-- **Defeat**: 20% chance of gaining a negative condition, mood decreases
-- Failed levels must be retried before the final boss
+- **Defeat (Levels 1-9)**: 20% chance of gaining a negative condition, mood decreases, can retry immediately
+- **Defeat (Level 10 - Final Boss)**: GAME OVER - your adventurer has failed their ultimate test
 
 ## 🎯 Winning Strategy
 

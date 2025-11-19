@@ -20,10 +20,14 @@ export const initialGameState: GameState = {
   turn: 0,
   dungeonLevel: 1,
   currentDungeonLevel: 0,
-  gameLog: ['Welcome to the Adventurer\'s School! Select your starting adventurer.'],
+  gameLog: [],
   trainingHistory: [],
   inCombat: false,
   enemy: null,
+  prestigeLevel: 0,
+  legacy: null,
+  showIntro: true,
+  lastEventTurn: 0,
 };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -37,18 +41,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const adventurer = createAdventurer(
         action.characterClass,
-        names[action.characterClass]
+        names[action.characterClass],
+        state.legacy,
+        state.prestigeLevel
       );
+
+      const logs = [
+        ...state.gameLog,
+        `${adventurer.name} the ${action.characterClass.toUpperCase()} joins your school!`,
+        `Passive Ability: ${adventurer.passive.name} - ${adventurer.passive.description}`,
+      ];
+
+      if (state.prestigeLevel > 0) {
+        logs.push(`🌟 PRESTIGE LEVEL ${state.prestigeLevel} 🌟`);
+        if (adventurer.skills.length > 0) {
+          logs.push(`Inherited Skills: ${adventurer.skills.map(s => s.name).join(', ')}`);
+        }
+      }
+
+      logs.push('Begin training to prepare for the Dungeon Tower!');
 
       return {
         ...state,
         adventurer,
         turn: 1,
-        gameLog: [
-          ...state.gameLog,
-          `${adventurer.name} the ${action.characterClass} joins your school!`,
-          'Begin training to prepare for the Dungeon Tower!',
-        ],
+        gameLog: logs,
       };
     }
 
@@ -111,17 +128,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const levelToChallenge = state.currentDungeonLevel + 1;
 
-      // Check if it's the right turn
-      if (state.turn % 10 !== 0) {
-        return {
-          ...state,
-          gameLog: [
-            ...state.gameLog,
-            `The Dungeon Tower opens every 10 turns. Next opening: Turn ${Math.ceil(state.turn / 10) * 10}`,
-          ],
-        };
-      }
-
+      // Check if all levels conquered
       if (levelToChallenge > 10) {
         return {
           ...state,
@@ -132,8 +139,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         };
       }
 
+      // Check if dungeon level is available yet
+      const dungeonOpenTurn = levelToChallenge * 10;
+      if (state.turn < dungeonOpenTurn) {
+        return {
+          ...state,
+          gameLog: [
+            ...state.gameLog,
+            `Dungeon Tower Level ${levelToChallenge} opens at Turn ${dungeonOpenTurn}. Continue training!`,
+          ],
+        };
+      }
+
       const isBoss = levelToChallenge === 10;
-      const enemy = createEnemy(levelToChallenge, isBoss);
+      const enemy = createEnemy(levelToChallenge, isBoss, state.prestigeLevel);
 
       return {
         ...state,
@@ -223,6 +242,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (newAdventurer.hp <= 0) {
         newAdventurer.hp = newAdventurer.maxHp; // Restore HP
 
+        // Check if this was the final boss - if so, GAME OVER
+        if (newEnemy.level === 10 && newEnemy.isBoss) {
+          newLog.push(
+            `${newAdventurer.name} was defeated by the final boss...`,
+            '💀 GAME OVER 💀',
+            'The Dungeon Tower remains unconquered.',
+            'Your adventurer has failed their ultimate test.'
+          );
+
+          return {
+            ...newState,
+            adventurer: null, // Game over - no adventurer
+            inCombat: false,
+            enemy: null,
+            gameLog: newLog,
+          };
+        }
+
+        // Regular defeat - can retry
         // 20% chance for condition
         if (Math.random() < 0.2) {
           const conditions = ['Injured', 'Hexed', 'Unmotivated'] as const;
@@ -261,11 +299,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'USE_SKILL': {
       if (!state.adventurer || !state.enemy || !state.inCombat) return state;
 
-      // Use the skill temporarily for this attack
-      const tempAdventurer = { ...state.adventurer, stats: { ...state.adventurer.stats } };
-      action.skill.effect(tempAdventurer);
+      // Create a temporary state with skill-enhanced adventurer
+      const enhancedAdventurer = { ...state.adventurer, stats: { ...state.adventurer.stats } };
+      action.skill.effect(enhancedAdventurer);
 
-      return gameReducer(state, { type: 'ATTACK', skill: action.skill });
+      const tempState = {
+        ...state,
+        adventurer: enhancedAdventurer,
+      };
+
+      return gameReducer(tempState, { type: 'ATTACK', skill: action.skill });
     }
 
     case 'SELECT_SKILL': {
@@ -303,7 +346,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'NEW_GAME': {
       return {
         ...initialGameState,
+        showIntro: true,
+      };
+    }
+
+    case 'DISMISS_INTRO': {
+      return {
+        ...state,
+        showIntro: false,
         gameLog: ['Welcome to the Adventurer\'s School! Select your starting adventurer.'],
+      };
+    }
+
+    case 'START_PRESTIGE': {
+      if (!state.adventurer) return state;
+
+      // Create legacy data
+      const legacy = {
+        previousClass: state.adventurer.class,
+        inheritedSkills: state.adventurer.skills.slice(0, 3), // Pass up to 3 best skills
+        prestigeLevel: state.prestigeLevel + 1,
+        totalTurnsCompleted: state.turn,
+      };
+
+      return {
+        ...initialGameState,
+        prestigeLevel: state.prestigeLevel + 1,
+        legacy,
+        showIntro: true,
       };
     }
 
