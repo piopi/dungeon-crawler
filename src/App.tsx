@@ -287,8 +287,10 @@ function App() {
   const renderTrainingActions = () => {
     if (!state.adventurer || state.inCombat) return null;
 
-    const isDungeonTurn = state.turn % 10 === 0 && state.turn > 0;
-    const canChallengeDungeon = state.currentDungeonLevel < 10;
+    // Check if dungeon is available (opens at level * 10, stays open until conquered)
+    const nextDungeonLevel = state.currentDungeonLevel + 1;
+    const dungeonOpenTurn = nextDungeonLevel * 10;
+    const isDungeonAvailable = state.turn >= dungeonOpenTurn && nextDungeonLevel <= 10;
 
     return (
       <div className="panel fade-in">
@@ -318,9 +320,9 @@ function App() {
           <button className="btn btn-warning" onClick={handleTavern}>
             🍺 Tavern
           </button>
-          {isDungeonTurn && canChallengeDungeon && (
+          {isDungeonAvailable && (
             <button className="btn btn-danger" onClick={handleEnterDungeon} style={{ gridColumn: '1 / -1' }}>
-              ⚔️ ENTER DUNGEON TOWER ⚔️
+              ⚔️ ENTER DUNGEON TOWER LVL {nextDungeonLevel} ⚔️
             </button>
           )}
         </div>
@@ -385,15 +387,22 @@ function App() {
     if (!state.adventurer) return null;
 
     const dungeonProgress = (state.currentDungeonLevel / 10) * 100;
-    const nextDungeonTurn = Math.ceil(state.turn / 10) * 10;
+    const nextDungeonLevel = state.currentDungeonLevel + 1;
+    const nextDungeonTurn = nextDungeonLevel * 10;
+    const isDungeonAvailable = state.turn >= nextDungeonTurn && nextDungeonLevel <= 10;
 
     return (
       <div>
         <div className="turn-counter">
           <div>Turn <span className="turn-number">{state.turn}</span></div>
-          {state.currentDungeonLevel < 10 && (
+          {state.currentDungeonLevel < 10 && !isDungeonAvailable && (
             <div style={{ fontSize: '9px', marginTop: '8px', color: '#d8dee9' }}>
               Next Dungeon: Turn {nextDungeonTurn}
+            </div>
+          )}
+          {isDungeonAvailable && (
+            <div style={{ fontSize: '9px', marginTop: '8px', color: '#bf616a', animation: 'pulse 1s infinite' }}>
+              ⚔️ Dungeon Level {nextDungeonLevel} Available! ⚔️
             </div>
           )}
         </div>

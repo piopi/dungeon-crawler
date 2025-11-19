@@ -111,23 +111,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const levelToChallenge = state.currentDungeonLevel + 1;
 
-      // Check if it's the right turn
-      if (state.turn % 10 !== 0) {
-        return {
-          ...state,
-          gameLog: [
-            ...state.gameLog,
-            `The Dungeon Tower opens every 10 turns. Next opening: Turn ${Math.ceil(state.turn / 10) * 10}`,
-          ],
-        };
-      }
-
+      // Check if all levels conquered
       if (levelToChallenge > 10) {
         return {
           ...state,
           gameLog: [
             ...state.gameLog,
             'All dungeon levels have been conquered!',
+          ],
+        };
+      }
+
+      // Check if dungeon level is available yet
+      const dungeonOpenTurn = levelToChallenge * 10;
+      if (state.turn < dungeonOpenTurn) {
+        return {
+          ...state,
+          gameLog: [
+            ...state.gameLog,
+            `Dungeon Tower Level ${levelToChallenge} opens at Turn ${dungeonOpenTurn}. Continue training!`,
           ],
         };
       }
@@ -223,6 +225,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (newAdventurer.hp <= 0) {
         newAdventurer.hp = newAdventurer.maxHp; // Restore HP
 
+        // Check if this was the final boss - if so, GAME OVER
+        if (newEnemy.level === 10 && newEnemy.isBoss) {
+          newLog.push(
+            `${newAdventurer.name} was defeated by the final boss...`,
+            '💀 GAME OVER 💀',
+            'The Dungeon Tower remains unconquered.',
+            'Your adventurer has failed their ultimate test.'
+          );
+
+          return {
+            ...newState,
+            adventurer: null, // Game over - no adventurer
+            inCombat: false,
+            enemy: null,
+            gameLog: newLog,
+          };
+        }
+
+        // Regular defeat - can retry
         // 20% chance for condition
         if (Math.random() < 0.2) {
           const conditions = ['Injured', 'Hexed', 'Unmotivated'] as const;

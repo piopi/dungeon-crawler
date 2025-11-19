@@ -205,8 +205,8 @@ export function rest(adventurer: Adventurer): { message: string; adventurer: Adv
   const fatigueReduction = Math.floor(newAdventurer.fatigue * 0.5) + 5; // Reduce 50% + 5
   newAdventurer.fatigue = Math.max(0, newAdventurer.fatigue - fatigueReduction);
 
-  // Small chance to remove condition
-  if (newAdventurer.condition && Math.random() < 0.3) {
+  // 70% chance to remove condition
+  if (newAdventurer.condition && Math.random() < 0.7) {
     const oldCondition = newAdventurer.condition;
     newAdventurer.condition = null;
     return {
