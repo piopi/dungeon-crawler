@@ -49,6 +49,14 @@ export interface TrainingExp {
   criticalDamage: number;
 }
 
+// Passive ability definition
+export interface PassiveAbility {
+  id: string;
+  name: string;
+  description: string;
+  class: CharacterClass;
+}
+
 // Skill definition
 export interface Skill {
   id: string;
@@ -56,6 +64,14 @@ export interface Skill {
   description: string;
   relatedStat: StatType;
   effect: (adventurer: Adventurer) => void;
+}
+
+// Legacy data from previous adventurer
+export interface LegacyData {
+  previousClass: CharacterClass;
+  inheritedSkills: Skill[];
+  prestigeLevel: number;
+  totalTurnsCompleted: number;
 }
 
 // Adventurer state
@@ -75,6 +91,8 @@ export interface Adventurer {
   skills: Skill[];
   hp: number;
   maxHp: number;
+  passive: PassiveAbility;
+  visualStyle: string; // ASCII art representation
 }
 
 // Game state
@@ -87,6 +105,10 @@ export interface GameState {
   trainingHistory: StatType[];
   inCombat: boolean;
   enemy: Enemy | null;
+  prestigeLevel: number;
+  legacy: LegacyData | null;
+  showIntro: boolean;
+  lastEventTurn: number; // Track when last random event occurred
 }
 
 // Enemy definition
@@ -110,4 +132,6 @@ export type GameAction =
   | { type: 'FLEE' }
   | { type: 'USE_SKILL'; skill: Skill }
   | { type: 'SELECT_SKILL'; skill: Skill }
-  | { type: 'NEW_GAME' };
+  | { type: 'NEW_GAME' }
+  | { type: 'DISMISS_INTRO' }
+  | { type: 'START_PRESTIGE' };

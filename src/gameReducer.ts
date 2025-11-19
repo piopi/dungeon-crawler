@@ -20,10 +20,14 @@ export const initialGameState: GameState = {
   turn: 0,
   dungeonLevel: 1,
   currentDungeonLevel: 0,
-  gameLog: ['Welcome to the Adventurer\'s School! Select your starting adventurer.'],
+  gameLog: [],
   trainingHistory: [],
   inCombat: false,
   enemy: null,
+  prestigeLevel: 0,
+  legacy: null,
+  showIntro: true,
+  lastEventTurn: 0,
 };
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -37,18 +41,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const adventurer = createAdventurer(
         action.characterClass,
-        names[action.characterClass]
+        names[action.characterClass],
+        state.legacy,
+        state.prestigeLevel
       );
+
+      const logs = [
+        ...state.gameLog,
+        `${adventurer.name} the ${action.characterClass.toUpperCase()} joins your school!`,
+        `Passive Ability: ${adventurer.passive.name} - ${adventurer.passive.description}`,
+      ];
+
+      if (state.prestigeLevel > 0) {
+        logs.push(`🌟 PRESTIGE LEVEL ${state.prestigeLevel} 🌟`);
+        if (adventurer.skills.length > 0) {
+          logs.push(`Inherited Skills: ${adventurer.skills.map(s => s.name).join(', ')}`);
+        }
+      }
+
+      logs.push('Begin training to prepare for the Dungeon Tower!');
 
       return {
         ...state,
         adventurer,
         turn: 1,
-        gameLog: [
-          ...state.gameLog,
-          `${adventurer.name} the ${action.characterClass} joins your school!`,
-          'Begin training to prepare for the Dungeon Tower!',
-        ],
+        gameLog: logs,
       };
     }
 
@@ -135,7 +152,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const isBoss = levelToChallenge === 10;
-      const enemy = createEnemy(levelToChallenge, isBoss);
+      const enemy = createEnemy(levelToChallenge, isBoss, state.prestigeLevel);
 
       return {
         ...state,
@@ -282,11 +299,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'USE_SKILL': {
       if (!state.adventurer || !state.enemy || !state.inCombat) return state;
 
-      // Use the skill temporarily for this attack
-      const tempAdventurer = { ...state.adventurer, stats: { ...state.adventurer.stats } };
-      action.skill.effect(tempAdventurer);
+      // Create a temporary state with skill-enhanced adventurer
+      const enhancedAdventurer = { ...state.adventurer, stats: { ...state.adventurer.stats } };
+      action.skill.effect(enhancedAdventurer);
 
-      return gameReducer(state, { type: 'ATTACK', skill: action.skill });
+      const tempState = {
+        ...state,
+        adventurer: enhancedAdventurer,
+      };
+
+      return gameReducer(tempState, { type: 'ATTACK', skill: action.skill });
     }
 
     case 'SELECT_SKILL': {
@@ -324,7 +346,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'NEW_GAME': {
       return {
         ...initialGameState,
+        showIntro: true,
+      };
+    }
+
+    case 'DISMISS_INTRO': {
+      return {
+        ...state,
+        showIntro: false,
         gameLog: ['Welcome to the Adventurer\'s School! Select your starting adventurer.'],
+      };
+    }
+
+    case 'START_PRESTIGE': {
+      if (!state.adventurer) return state;
+
+      // Create legacy data
+      const legacy = {
+        previousClass: state.adventurer.class,
+        inheritedSkills: state.adventurer.skills.slice(0, 3), // Pass up to 3 best skills
+        prestigeLevel: state.prestigeLevel + 1,
+        totalTurnsCompleted: state.turn,
+      };
+
+      return {
+        ...initialGameState,
+        prestigeLevel: state.prestigeLevel + 1,
+        legacy,
+        showIntro: true,
       };
     }
 
